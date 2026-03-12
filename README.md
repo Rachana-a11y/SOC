@@ -1,8 +1,6 @@
 
 # Project 2 – SOC: Enterprise EDR & Threat Hunting Grid
 
-## Project Name
-
 **Sentient Shield – Enterprise Endpoint Detection & Threat Monitoring Platform**
 
 ## Objective
@@ -78,12 +76,9 @@ Expected output:
 Active: active (running)
 ```
 
----
 
 <img width="966" height="595" alt="Screenshot 2026-03-09 215938" src="https://github.com/user-attachments/assets/da2ba2f8-328b-4285-928f-98e97ad60d0b" />
 
-
-📸 **Screenshot Name**
 
 ```
 wazuh-manager-running.png
@@ -109,11 +104,12 @@ Login credentials are generated during installation.
 
 Dashboard loads successfully.
 
----
 
-## Screenshot 2
 
-📸 **Screenshot Name**
+<img width="1918" height="960" alt="Screenshot 2026-03-12 201254" src="https://github.com/user-attachments/assets/1d0e9cf1-0058-4fc5-8442-85977f19b278" />
+
+
+
 
 ```
 wazuh-dashboard-home.png
@@ -148,11 +144,9 @@ Check status:
 sudo systemctl status wazuh-agent
 ```
 
----
 
-## Screenshot 3
+<img width="1328" height="698" alt="Screenshot 2026-03-09 211454" src="https://github.com/user-attachments/assets/5c0a7caa-70bd-4ba0-b6ef-e246b1e612ad" />
 
-📸 **Screenshot Name**
 
 ```
 linux-agent-status.png
@@ -184,11 +178,9 @@ Verify:
 Wazuh Agent Running
 ```
 
----
 
-## Screenshot 4
+<img width="1328" height="698" alt="Screenshot 2026-03-09 211454" src="https://github.com/user-attachments/assets/f3ed91ec-d6ec-46c1-ad39-d29cafcdefbd" />
 
-📸 **Screenshot Name**
 
 ```
 windows-agent-running.png
