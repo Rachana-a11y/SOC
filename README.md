@@ -24,7 +24,7 @@ sudo systemctl status wazuh-manager
 ```
 
 **2. Linux Agent Deployment**
-```
+```bash
 sudo apt install wazuh-agent -y
 sudo nano /var/ossec/etc/ossec.conf   # configure Wazuh Manager IP
 sudo systemctl enable --now wazuh-agent
@@ -36,7 +36,7 @@ sudo systemctl status wazuh-agent
 Install Wazuh Agent MSI and configure Manager IP
 
 Install Sysmon:
-```
+```bash
 Sysmon64.exe -accepteula -i sysmonconfig.xml
 ```
 Explanation:
@@ -63,14 +63,14 @@ Configure File Integrity Monitoring (FIM) and custom XML rules for proprietary l
 Steps & Commands
 
 1. FIM Configuration
-```
+```bash
 <syscheck>
   <directories check_all="yes">/etc,/var/www/html,/opt/app/config</directories>
   <frequency>600</frequency>  <!-- check every 10 minutes for enterprise environment -->
 </syscheck>
 ```
 2. Custom XML Rule
-```
+```bash
 <group name="custom-app-logs">
   <rule id="100001" level="10">
     <decoded_as>custom-app</decoded_as>
@@ -120,7 +120,7 @@ Automatically block attacker IPs during SSH brute-force attacks.
 Steps & Commands
 
 1. Configure Active Response
-```
+```xml
 <active-response>
   <command>firewalld-drop</command>
   <location>all</location>
@@ -166,12 +166,12 @@ Simulate ransomware attacks using Atomic Red Team and visualize alerts in Kibana
 Steps & Commands
 
 1. Clone Atomic Red Team
-```
+``` bash
 git clone https://github.com/redcanaryco/atomic-red-team.git
 cd atomic-red-team
 ```
 2. Simulate Ransomware (Delete Shadow Volume Copies – T1490)
-```
+``` PowerShell
 Invoke-AtomicTest T1490 -Target C:\Test
 ```
 3. Map Alerts to MITRE ATT&CK
