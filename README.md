@@ -1,558 +1,260 @@
+# Project 2: Enterprise EDR & Threat Hunting Grid (Sentient Shield)
 
-# Project 2 – SOC: Enterprise EDR & Threat Hunting Grid
+**Objective:**  
+Build an enterprise-grade SOC framework for real-time detection and automated response to brute-force and ransomware attacks. Includes File Integrity Monitoring (FIM), MITRE ATT&CK mapping, and active response automation.
 
-**Sentient Shield – Enterprise Endpoint Detection & Threat Monitoring Platform**
-
-## Objective
-
-The goal of this project was to build a **Security Operations Center (SOC) monitoring environment** capable of detecting malicious activities across endpoints.
-
-The monitoring system was built using **Wazuh**, which collects logs from different systems and analyzes them to detect threats.
-
-To improve Windows visibility, **Sysmon** was deployed.
-
-To simulate real attacks, **Atomic Red Team** was used.
-
-The SOC platform can detect:
-
-* Brute force attacks
-* File modifications
-* Suspicious processes
-* Malware behavior
-* MITRE ATT&CK techniques
+**Use Case:**  
+Infotact servers are under constant brute-force and ransomware threats. This project demonstrates detection, automated response, and executive-level reporting with MITRE ATT&CK correlation.
 
 ---
 
-# Environment Setup
+## Week 1 – Infrastructure & Agent Deployment
 
-| Machine         | Role                 |
-| --------------- | -------------------- |
-| Ubuntu Server   | Wazuh Manager        |
-| Windows Machine | Endpoint with Sysmon |
-| Linux Machine   | Monitored endpoint   |
+**Objective:**  
+Deploy Wazuh Manager and agents on Linux and Windows servers, install Sysmon, and validate heartbeat/log reporting.
 
-Example IPs (for documentation):
+### Steps & Commands
 
-```
-Wazuh Manager: 192.168.1.10
-Windows Agent: 192.168.1.20
-Linux Agent: 192.168.1.30
-```
-
----
-
-# Week 1 – Infrastructure Setup & Agent Deployment
-
-## Goal
-
-Install the SOC monitoring infrastructure and connect endpoints.
-
----
-
-# Step 1 – Install Wazuh Manager
-
-On Ubuntu server run:
-
+**1. Wazuh Manager on Linux**
 ```bash
-curl -sO https://packages.wazuh.com/4.7/wazuh-install.sh
-sudo bash wazuh-install.sh -a
-```
-
-This installs:
-
-* Wazuh Manager
-* OpenSearch
-* Wazuh Dashboard
-
-Verify service:
-
-```bash
+sudo apt update
+sudo apt install wazuh-manager -y
+sudo systemctl enable --now wazuh-manager
 sudo systemctl status wazuh-manager
 ```
 
-Expected output:
+**2. Linux Agent Deployment**
 
-```
-Active: active (running)
-```
-
-
-<img width="966" height="595" alt="Screenshot 2026-03-09 215938" src="https://github.com/user-attachments/assets/da2ba2f8-328b-4285-928f-98e97ad60d0b" />
-
-
-```
-wazuh-manager-running.png
-```
-
-📌 Capture:
-
-```
-systemctl status wazuh-manager
-```
-
----
-
-# Step 2 – Access Wazuh Dashboard
-
-Open browser:
-
-```
-https://MANAGER-IP
-```
-
-Login credentials are generated during installation.
-
-Dashboard loads successfully.
-
-
-
-<img width="1918" height="960" alt="Screenshot 2026-03-12 201254" src="https://github.com/user-attachments/assets/1d0e9cf1-0058-4fc5-8442-85977f19b278" />
-
-
-
-
-```
-wazuh-dashboard-home.png
-```
-
-📌 Capture:
-
-Wazuh dashboard homepage.
-
----
-
-# Step 3 – Install Wazuh Agent on Linux
-
-Run on Linux endpoint:
-
-```bash
-curl -so wazuh-agent.deb https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.x.deb
-sudo WAZUH_MANAGER="192.168.1.10" dpkg -i wazuh-agent.deb
-```
-
-Start agent:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable wazuh-agent
-sudo systemctl start wazuh-agent
-```
-
-Check status:
-
-```bash
+sudo apt install wazuh-agent -y
+sudo nano /var/ossec/etc/ossec.conf   # configure Wazuh Manager IP
+sudo systemctl enable --now wazuh-agent
 sudo systemctl status wazuh-agent
-```
 
+**3. Windows Agent & Sysmon**
 
-<img width="1328" height="698" alt="Screenshot 2026-03-09 211454" src="https://github.com/user-attachments/assets/5c0a7caa-70bd-4ba0-b6ef-e246b1e612ad" />
+Install Wazuh Agent MSI and configure Manager IP
 
+Install Sysmon:
 
-```
-linux-agent-status.png
-```
+Sysmon64.exe -accepteula -i sysmonconfig.xml
 
-📌 Capture:
+Explanation:
 
-```
-systemctl status wazuh-agent
-```
+Agents collect real-time system and log data.
 
----
+Sysmon enhances Windows telemetry with process, network, and file events.
 
-# Step 4 – Install Windows Agent
+Continuous heartbeat monitoring ensures agent health.
 
-Download agent installer from Wazuh website.
+Gate Check: Verify all agents show Active in Wazuh dashboard.
 
-Install with manager IP.
+Screenshots to Include:
 
-After installation check:
+week1_agents.png – Wazuh agents Active status
 
-```
-services.msc
-```
+week1_sysmon.png – Sysmon logs showing process/network events
 
-Verify:
+## Week 2 – Detection Rules (FIM & Custom Logic)
 
-```
-Wazuh Agent Running
-```
+Objective:
+Configure File Integrity Monitoring (FIM) and custom XML rules for proprietary logs. Enable Vulnerability Detector.
 
+Steps & Commands
 
-<img width="1328" height="698" alt="Screenshot 2026-03-09 211454" src="https://github.com/user-attachments/assets/f3ed91ec-d6ec-46c1-ad39-d29cafcdefbd" />
+1. FIM Configuration
 
+<syscheck>
+  <directories check_all="yes">/etc,/var/www/html,/opt/app/config</directories>
+  <frequency>600</frequency>  <!-- check every 10 minutes for enterprise environment -->
+</syscheck>
 
-```
-windows-agent-running.png
-```
+2. Custom XML Rule
 
-📌 Capture:
+<group name="custom-app-logs">
+  <rule id="100001" level="10">
+    <decoded_as>custom-app</decoded_as>
+    <description>Critical configuration change detected</description>
+    <frequency>1</frequency>
+  </rule>
+</group>
 
-Windows services showing Wazuh Agent.
+3. Enable Vulnerability Detector
 
----
-
-# Step 5 – Install Sysmon
-
-Download **Sysmon**.
-
-Run in PowerShell:
-
-```powershell
-sysmon64.exe -i sysmonconfig.xml
-```
-
-Verify:
-
-```powershell
-Get-Service sysmon
-```
-
----
-
-## Screenshot 5
-
-📸 **Screenshot Name**
-
-```
-sysmon-running.png
-```
-
-📌 Capture:
-
-Sysmon service status.
-
----
-
-# Step 6 – Verify Agents in Dashboard
-
-Go to:
-
-```
-Wazuh Dashboard → Agents
-```
-
-You should see:
-
-```
-Linux agent – Active
-Windows agent – Active
-```
-
----
-
-## Screenshot 6
-
-📸 **Screenshot Name**
-
-```
-agents-active.png
-```
-
-📌 Capture:
-
-Agents page showing active endpoints.
-
----
-
-# Week 2 – File Integrity Monitoring (FIM)
-
-## Goal
-
-Detect unauthorized modifications to critical system files.
-
----
-
-# Step 1 – Configure FIM
-
-Edit configuration:
-
-```bash
 sudo nano /var/ossec/etc/ossec.conf
-```
+sudo systemctl restart wazuh-agent
 
-Add directories:
+4. Test Detection
 
-```
-/etc
-/bin
-/usr/bin
-```
+echo "Test modification" >> /var/www/html/index.html
 
-Restart manager:
+Explanation:
 
-```bash
-sudo systemctl restart wazuh-manager
-```
+FIM monitors critical files for unauthorized changes.
 
----
+Custom rules generate high-severity alerts for sensitive application logs.
 
-# Step 2 – Simulate File Modification
+Vulnerability Detector scans for known CVEs automatically.
 
-Modify system file:
+Gate Check: High-severity alert should appear within seconds in the Wazuh dashboard.
 
-```bash
-sudo nano /etc/passwd
-```
+MITRE ATT&CK Mapping Example:
 
-Save file.
+File modification → T1070 (Indicator Removal)
 
----
+Unauthorized access → T1078 (Valid Accounts)
 
-# Step 3 – Verify Alert
+Screenshots to Include:
 
-Open dashboard:
+week2_fim_alert.png – FIM alert
 
-```
-Security Events → Alerts
-```
+week2_custom_rule.png – Custom XML rule triggered
 
-Expected alert:
+week2_vuln_detector.png – Vulnerability Detector scan results
 
-```
-File Integrity Monitoring Alert
-File changed: /etc/passwd
-```
+Week 3 – Active Response (IPS)
 
----
+Objective:
+Automatically block attacker IPs during SSH brute-force attacks.
 
-## Screenshot 7
+Steps & Commands
 
-📸 **Screenshot Name**
+1. Configure Active Response
 
-```
-fim-alert.png
-```
-
-📌 Capture:
-
-Alert showing `/etc/passwd modified`.
-
----
-
-# Week 3 – Active Response (Blocking Attackers)
-
-## Goal
-
-Automatically block attackers performing brute force attacks.
-
----
-
-# Step 1 – Configure Active Response
-
-Edit configuration:
-
-```bash
-sudo nano /var/ossec/etc/ossec.conf
-```
-
-Add:
-
-```
 <active-response>
-<command>firewall-drop</command>
-<location>local</location>
-<rules_id>5710</rules_id>
+  <command>firewalld-drop</command>
+  <location>all</location>
+  <rules_id>100002,100003</rules_id>
 </active-response>
-```
 
-Restart Wazuh:
+2. Test Brute-force Attack
 
-```bash
-sudo systemctl restart wazuh-manager
-```
+hydra -l root -P passwords.txt ssh://target-server-ip
 
----
+3. Verify Firewall Blocking
 
-# Step 2 – Simulate Brute Force Attack
+sudo firewall-cmd --list-all
+sudo tail -f /var/log/messages | grep "Blocked IP"
 
-Use **Hydra**.
+Explanation:
 
-Example:
+Wazuh detects repeated failed login attempts and triggers mitigation.
 
-```bash
-hydra -l root -P rockyou.txt ssh://192.168.1.30
-```
+Active Response blocks attackers before damage occurs.
 
-This attempts multiple SSH logins.
+MITRE ATT&CK mapping: T1110 – Brute Force.
 
----
+Gate Check: Attacker IP is automatically blocked; alert appears in dashboard.
 
-# Step 3 – Detect Attack
+Extra Enhancements:
 
-Wazuh generates alert:
+Configure Slack/email notifications for high-severity responses.
 
-```
-Multiple SSH authentication failures
-```
+Maintain a log of blocked IPs for SOC review.
 
----
+Screenshots to Include:
 
-## Screenshot 8
+week3_bruteforce_alert.png – Brute-force alert
 
-📸 **Screenshot Name**
+week3_firewall_block.png – Firewall blocked IP logs
 
-```
-ssh-bruteforce-alert.png
-```
+Week 4 – Threat Simulation & Kill Chain Visualization
 
-📌 Capture:
+Objective:
+Simulate ransomware attacks using Atomic Red Team and visualize alerts in Kibana/OpenSearch.
 
-Alert showing SSH brute force attack.
+Steps & Commands
 
----
+1. Clone Atomic Red Team
 
-# Step 4 – Verify IP Block
+git clone https://github.com/redcanaryco/atomic-red-team.git
+cd atomic-red-team
 
-Check firewall:
+2. Simulate Ransomware (Delete Shadow Volume Copies – T1490)
 
-```bash
-sudo iptables -L
-```
+Invoke-AtomicTest T1490 -Target C:\Test
 
-Blocked attacker IP appears.
+3. Map Alerts to MITRE ATT&CK
 
----
+Shadow Copy deletion → T1490
 
-## Screenshot 9
+Process injection → T1055
 
-📸 **Screenshot Name**
+Credential dumping → T1003
 
-```
-ip-blocked.png
-```
+4. Visualize Kill Chain in Kibana/OpenSearch
 
-📌 Capture:
+End-to-end detection: Initial Access → Execution → Detection → Response
 
-iptables rule blocking attacker IP.
+Gate Check: Kill Chain visualization confirms detection and response workflow.
 
----
+Screenshots to Include:
 
-# Week 4 – Threat Simulation using Atomic Red Team
+week4_atomic_simulation.png – Atomic Red Team simulation output
 
-## Goal
+week4_kill_chain.png – Kill Chain visualization in Kibana
 
-Simulate real-world cyber attacks and verify detection.
+Wazuh alerts mapped to MITRE ATT&CK
 
----
+Tools & Technologies
 
-# Step 1 – Install Atomic Red Team
+Wazuh Manager & Agents (Linux & Windows)
 
-Run in PowerShell:
+Sysmon (Windows)
 
-```powershell
-Install-Module -Name Invoke-AtomicRedTeam
-```
+Atomic Red Team
 
-Import module:
+Kibana / OpenSearch
 
-```powershell
-Import-Module Invoke-AtomicRedTeam
-```
+Hydra (Brute-force testing)
 
----
+MITRE ATT&CK framework
 
-# Step 2 – List Available Techniques
+Enterprise Firewall (firewalld / iptables)
 
-```powershell
-Get-AtomicTechnique
-```
+Suggested Screenshot Plan
+Week	Filename	Description
+1	week1_agents.png	Wazuh agents Active status
+1	week1_sysmon.png	Sysmon logs showing process/network events
+2	week2_fim_alert.png	FIM high-severity alert
+2	week2_custom_rule.png	Custom XML rule triggered
+2	week2_vuln_detector.png	Vulnerability Detector scan
+3	week3_bruteforce_alert.png	Brute-force detection alert
+3	week3_firewall_block.png	Firewall blocked IP logs
+4	week4_atomic_simulation.png	Atomic Red Team simulation results
+4	week4_kill_chain.png	Kill Chain visualization in Kibana/OpenSearch
+Recommended GitHub Repo Structure
+Project2-SOC-EDR/
+├─ README.md
+├─ screenshots/
+│  ├─ week1_agents.png
+│  ├─ week1_sysmon.png
+│  ├─ week2_fim_alert.png
+│  ├─ week2_custom_rule.png
+│  ├─ week2_vuln_detector.png
+│  ├─ week3_bruteforce_alert.png
+│  ├─ week3_firewall_block.png
+│  ├─ week4_atomic_simulation.png
+│  └─ week4_kill_chain.png
 
-Shows multiple MITRE ATT&CK simulations.
+✅ This Markdown README is fully job-ready, polished, and contains:
 
----
+Week-by-week commands and explanations
 
-## Screenshot 10
+MITRE ATT&CK mapping
 
-📸 **Screenshot Name**
+Active response & threat simulation
 
-```
-atomic-techniques.png
-```
+Screenshot placeholders for portfolio
 
-📌 Capture:
 
-Output of `Get-AtomicTechnique`.
+This **Markdown file** is complete and ready to push to GitHub. You just need to:  
 
----
-
-# Step 3 – Run Attack Simulation
-
-Example:
-
-```
-T1490 – Inhibit System Recovery
-```
-
-Run test:
-
-```powershell
-Invoke-AtomicTest T1490
-```
-
-This deletes shadow copies.
+1. Create the `screenshots` folder.  
+2. Add your captured screenshots with the filenames listed.  
+3. Paste this README as `README.md` in the repo.  
 
 ---
 
-# Step 4 – Detect Attack
+If you want, I can also **generate a small script that creates the full folder structure and empty screenshot placeholders automatically**, so your repo is fully ready to push.  
 
-Open dashboard.
-
-Alert appears:
-
-```
-MITRE ATT&CK Technique T1490 detected
-```
-
----
-
-## Screenshot 11
-
-📸 **Screenshot Name**
-
-```
-mitre-attack-alert.png
-```
-
-📌 Capture:
-
-Alert showing MITRE ATT&CK technique.
-
----
-
-# Step 5 – Visualize Threat
-
-Open:
-
-```
-Threat Hunting → MITRE ATT&CK
-```
-
-Shows attack mapping.
-
----
-
-## Screenshot 12
-
-📸 **Screenshot Name**
-
-```
-mitre-dashboard.png
-```
-
-📌 Capture:
-
-MITRE ATT&CK visualization.
-
----
-
-# Final Results
-
-The SOC monitoring system successfully implemented:
-
-* Endpoint monitoring
-* File Integrity Monitoring
-* Brute force detection
-* Automated IP blocking
-* MITRE ATT&CK threat mapping
-* Real-world attack simulation
+Do you want me to do that?
