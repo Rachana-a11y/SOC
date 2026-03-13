@@ -24,20 +24,21 @@ sudo systemctl status wazuh-manager
 ```
 
 **2. Linux Agent Deployment**
-
+```
 sudo apt install wazuh-agent -y
 sudo nano /var/ossec/etc/ossec.conf   # configure Wazuh Manager IP
 sudo systemctl enable --now wazuh-agent
 sudo systemctl status wazuh-agent
+```
 
 **3. Windows Agent & Sysmon**
 
 Install Wazuh Agent MSI and configure Manager IP
 
 Install Sysmon:
-
+```
 Sysmon64.exe -accepteula -i sysmonconfig.xml
-
+```
 Explanation:
 
 Agents collect real-time system and log data.
@@ -62,14 +63,14 @@ Configure File Integrity Monitoring (FIM) and custom XML rules for proprietary l
 Steps & Commands
 
 1. FIM Configuration
-
+```
 <syscheck>
   <directories check_all="yes">/etc,/var/www/html,/opt/app/config</directories>
   <frequency>600</frequency>  <!-- check every 10 minutes for enterprise environment -->
 </syscheck>
-
+```
 2. Custom XML Rule
-
+```
 <group name="custom-app-logs">
   <rule id="100001" level="10">
     <decoded_as>custom-app</decoded_as>
@@ -77,7 +78,7 @@ Steps & Commands
     <frequency>1</frequency>
   </rule>
 </group>
-
+```
 3. Enable Vulnerability Detector
 
 sudo nano /var/ossec/etc/ossec.conf
@@ -119,22 +120,22 @@ Automatically block attacker IPs during SSH brute-force attacks.
 Steps & Commands
 
 1. Configure Active Response
-
+```
 <active-response>
   <command>firewalld-drop</command>
   <location>all</location>
   <rules_id>100002,100003</rules_id>
 </active-response>
-
+```
 2. Test Brute-force Attack
 
 hydra -l root -P passwords.txt ssh://target-server-ip
 
 3. Verify Firewall Blocking
-
+```
 sudo firewall-cmd --list-all
 sudo tail -f /var/log/messages | grep "Blocked IP"
-
+```
 Explanation:
 
 Wazuh detects repeated failed login attempts and triggers mitigation.
@@ -165,14 +166,14 @@ Simulate ransomware attacks using Atomic Red Team and visualize alerts in Kibana
 Steps & Commands
 
 1. Clone Atomic Red Team
-
+```
 git clone https://github.com/redcanaryco/atomic-red-team.git
 cd atomic-red-team
-
+```
 2. Simulate Ransomware (Delete Shadow Volume Copies – T1490)
-
+```
 Invoke-AtomicTest T1490 -Target C:\Test
-
+```
 3. Map Alerts to MITRE ATT&CK
 
 Shadow Copy deletion → T1490
@@ -222,7 +223,9 @@ Week	Filename	Description
 3	week3_firewall_block.png	Firewall blocked IP logs
 4	week4_atomic_simulation.png	Atomic Red Team simulation results
 4	week4_kill_chain.png	Kill Chain visualization in Kibana/OpenSearch
-Recommended GitHub Repo Structure
+
+
+
 Project2-SOC-EDR/
 ├─ README.md
 ├─ screenshots/
@@ -236,25 +239,5 @@ Project2-SOC-EDR/
 │  ├─ week4_atomic_simulation.png
 │  └─ week4_kill_chain.png
 
-✅ This Markdown README is fully job-ready, polished, and contains:
-
-Week-by-week commands and explanations
-
-MITRE ATT&CK mapping
-
-Active response & threat simulation
-
-Screenshot placeholders for portfolio
 
 
-This **Markdown file** is complete and ready to push to GitHub. You just need to:  
-
-1. Create the `screenshots` folder.  
-2. Add your captured screenshots with the filenames listed.  
-3. Paste this README as `README.md` in the repo.  
-
----
-
-If you want, I can also **generate a small script that creates the full folder structure and empty screenshot placeholders automatically**, so your repo is fully ready to push.  
-
-Do you want me to do that?
